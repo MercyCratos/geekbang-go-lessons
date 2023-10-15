@@ -1,6 +1,8 @@
 package web
 
 import (
+	"geekbang-lessons/webook/internal/domain"
+	"geekbang-lessons/webook/internal/service"
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -14,12 +16,14 @@ const (
 type UserHandler struct {
 	emailRegExp    *regexp.Regexp
 	passwordRegExp *regexp.Regexp
+	svc            *service.UserService
 }
 
-func NewUserHandler() *UserHandler {
+func NewUserHandler(svc *service.UserService) *UserHandler {
 	return &UserHandler{
 		emailRegExp:    regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRegExp: regexp.MustCompile(passwordRegexPattern, regexp.None),
+		svc:            svc,
 	}
 }
 
@@ -66,6 +70,15 @@ func (h *UserHandler) signup(ctx *gin.Context) {
 	}
 	if !isPassword {
 		ctx.String(http.StatusOK, "密码必须包含字母、数字、特殊字符，并且不少于八位")
+		return
+	}
+
+	err = h.svc.Signup(ctx, domain.User{
+		Email:    req.Email,
+		Password: req.Password,
+	})
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误")
 		return
 	}
 
