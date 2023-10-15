@@ -5,7 +5,10 @@ import (
 	"geekbang-lessons/webook/internal/repository/dao"
 	"geekbang-lessons/webook/internal/service"
 	"geekbang-lessons/webook/internal/web"
+	"geekbang-lessons/webook/internal/web/middleware"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -50,6 +53,11 @@ func initWebServer() *gin.Engine {
 		AllowHeaders: []string{"Content-Type"},
 		MaxAge:       12 * time.Hour,
 	}))
+
+	loginMiddleware := &middleware.LoginMiddlewareBuilder{}
+	store := cookie.NewStore([]byte("secret"))
+	server.Use(sessions.Sessions("ssid", store), loginMiddleware.CheckLogin())
+
 	return server
 }
 

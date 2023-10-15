@@ -4,6 +4,7 @@ import (
 	"geekbang-lessons/webook/internal/domain"
 	"geekbang-lessons/webook/internal/service"
 	regexp "github.com/dlclark/regexp2"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -88,7 +89,37 @@ func (h *UserHandler) signup(ctx *gin.Context) {
 }
 
 func (h *UserHandler) login(ctx *gin.Context) {
+	type LoginReq struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 
+	var req LoginReq
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	u, err := h.svc.Login(ctx, req.Email, req.Password)
+	switch err {
+	case nil:
+		session := sessions.Default(ctx)
+		session.Set("userId", u.Id)
+		session.Options(sessions.Options{
+			MaxAge:   900,
+			HttpOnly: true,
+		})
+		err = session.Save()
+		if err != nil {
+			ctx.String(http.StatusOK, "系统错误")
+			return
+		}
+
+		ctx.String(http.StatusOK, "登录成功")
+	case service.ErrInvalidUserOrPassword:
+		ctx.String(http.StatusOK, "用户名或者密码不对")
+	default:
+		ctx.String(http.StatusOK, "系统错误")
+	}
 }
 
 func (h *UserHandler) profile(ctx *gin.Context) {

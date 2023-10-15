@@ -1,3 +1,4 @@
+### user signup
 POST http://localhost:8080/users/signup
 Content-Type: application/json
 
@@ -6,3 +7,15 @@ Content-Type: application/json
   "password": "hello#world123",
   "confirm_password": "hello#world123"
 }
+
+### user login
+POST http://localhost:8080/users/login
+Content-Type: application/json
+
+{
+  "email": "1443424326@qq.com",
+  "password": "hello#world123"
+}
+
+### user profile
+GET http://localhost:8080/users/profile
