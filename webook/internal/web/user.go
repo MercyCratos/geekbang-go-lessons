@@ -7,6 +7,8 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
+	"unicode/utf8"
 )
 
 const (
@@ -123,9 +125,73 @@ func (h *UserHandler) login(ctx *gin.Context) {
 }
 
 func (h *UserHandler) profile(ctx *gin.Context) {
+	userId := h.getUserIdFromSession(ctx)
 
+	u, err := h.svc.GetProfile(ctx, userId)
+	if err != nil {
+		ctx.String(http.StatusOK, "系统异常")
+		return
+	}
+
+	type UserVO struct {
+		Nickname string `json:"nickname"`
+		Email    string `json:"email"`
+		AboutMe  string `json:"about_me"`
+		Birthday string `json:"birthday"`
+	}
+	ctx.JSON(http.StatusOK, UserVO{
+		Nickname: u.Nickname,
+		Email:    u.Email,
+		AboutMe:  u.AboutMe,
+		Birthday: u.Birthday.Format(time.DateOnly),
+	})
 }
 
 func (h *UserHandler) edit(ctx *gin.Context) {
+	type EditReq struct {
+		Nickname string `json:"nickname"`
+		Birthday string `json:"birthday"`
+		AboutMe  string `json:"about_me"`
+	}
 
+	var req EditReq
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	userId := h.getUserIdFromSession(ctx)
+
+	if utf8.RuneCountInString(req.Nickname) > 24 {
+		ctx.String(http.StatusOK, "昵称不能超过24位")
+		return
+	}
+
+	if utf8.RuneCountInString(req.AboutMe) > 128 {
+		ctx.String(http.StatusOK, "关于我不能超过128个字符")
+		return
+	}
+
+	birthday, err := time.Parse(time.DateOnly, req.Birthday)
+	if err != nil {
+		ctx.String(http.StatusOK, "生日格式不对")
+		return
+	}
+
+	err = h.svc.UpdateUserInfo(ctx, domain.User{
+		Id:       userId,
+		Nickname: req.Nickname,
+		Birthday: birthday,
+		AboutMe:  req.AboutMe,
+	})
+	if err != nil {
+		ctx.String(http.StatusOK, "系统异常")
+		return
+	}
+
+	ctx.String(http.StatusOK, "更新成功")
+}
+
+func (h *UserHandler) getUserIdFromSession(ctx *gin.Context) int64 {
+	session := sessions.Default(ctx)
+	return session.Get("userId").(int64)
 }

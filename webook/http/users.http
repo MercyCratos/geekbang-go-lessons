@@ -19,3 +19,14 @@ Content-Type: application/json
 
 ### user profile
 GET http://localhost:8080/users/profile
+Accept: application/json
+
+### user edit
+PUT http://localhost:8080/users/edit
+Content-Type: application/json
+
+{
+  "nickname": "mercycrazy",
+  "birthday": "2021-02-11",
+  "about_me": "cool"
+}

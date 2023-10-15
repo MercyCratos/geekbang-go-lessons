@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"errors"
+	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 	"time"
@@ -45,10 +46,30 @@ func (dao *UserDao) SelectOneByEmail(ctx context.Context, email string) (User, e
 	return u, err
 }
 
+func (dao *UserDao) UpdateById(ctx *gin.Context, entity User) error {
+	return dao.db.WithContext(ctx).Model(&entity).Where("id = ?", entity.Id).
+		Updates(map[string]any{
+			"updated_at": time.Now().UnixMilli(),
+			"nickname":   entity.Nickname,
+			"birthday":   entity.Birthday,
+			"about_me":   entity.AboutMe,
+		}).Error
+}
+
+func (dao *UserDao) SelectById(ctx *gin.Context, id int64) (User, error) {
+	var res User
+	err := dao.db.WithContext(ctx).Where("id = ?", id).First(&res).Error
+	return res, err
+}
+
 type User struct {
 	Id       int64  `gorm:"primaryKey,autoIncrement"`
 	Email    string `gorm:"unique"`
 	Password string
+
+	Nickname string `gorm:"type=varchar(24)"`
+	Birthday int64
+	AboutMe  string `gorm:"type=varchar(128)"`
 
 	// 为什么用 Int? 避免时区问题
 	// 这里永远使用 UTC 0 的毫秒数
