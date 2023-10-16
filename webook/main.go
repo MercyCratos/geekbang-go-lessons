@@ -8,7 +8,7 @@ import (
 	"geekbang-lessons/webook/internal/web/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/memstore"
+	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -58,7 +58,12 @@ func initWebServer() *gin.Engine {
 	}))
 
 	loginMiddleware := &middleware.LoginMiddlewareBuilder{}
-	store := memstore.NewStore([]byte("secret"))
+	store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
+		[]byte("k6CswdUm77WKcbM68UQUuxVsHSpTCwgK"),
+		[]byte("k6CswdUm77WKcbM68UQUuxVsHSpTCwgA"))
+	if err != nil {
+		panic(err)
+	}
 	server.Use(sessions.Sessions("ssid", store), loginMiddleware.CheckLogin())
 
 	return server
