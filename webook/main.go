@@ -8,7 +8,7 @@ import (
 	"geekbang-lessons/webook/internal/web/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/sessions/memstore"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -23,7 +23,10 @@ func main() {
 
 	initUserHandler(db, server)
 
-	server.Run(":8080")
+	err := server.Run(":8080")
+	if err != nil {
+		panic(err)
+	}
 }
 
 func initDB() *gorm.DB {
@@ -55,7 +58,7 @@ func initWebServer() *gin.Engine {
 	}))
 
 	loginMiddleware := &middleware.LoginMiddlewareBuilder{}
-	store := cookie.NewStore([]byte("secret"))
+	store := memstore.NewStore([]byte("secret"))
 	server.Use(sessions.Sessions("ssid", store), loginMiddleware.CheckLogin())
 
 	return server

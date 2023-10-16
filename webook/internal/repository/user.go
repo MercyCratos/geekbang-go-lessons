@@ -4,7 +4,6 @@ import (
 	"context"
 	"geekbang-lessons/webook/internal/domain"
 	"geekbang-lessons/webook/internal/repository/dao"
-	"github.com/gin-gonic/gin"
 	"time"
 )
 
@@ -39,15 +38,15 @@ func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (doma
 	return repo.toDomain(u), nil
 }
 
-func (repo *UserRepository) FindById(ctx *gin.Context, id int64) (domain.User, error) {
-	u, err := repo.dao.SelectById(ctx, id)
+func (repo *UserRepository) FindById(ctx context.Context, uid int64) (domain.User, error) {
+	u, err := repo.dao.SelectById(ctx, uid)
 	if err != nil {
 		return domain.User{}, err
 	}
 	return repo.toDomain(u), nil
 }
 
-func (repo *UserRepository) UpdateUser(ctx *gin.Context, user domain.User) error {
+func (repo *UserRepository) UpdateNonZeroFields(ctx context.Context, user domain.User) error {
 	return repo.dao.UpdateById(ctx, repo.toDataObject(user))
 }
 

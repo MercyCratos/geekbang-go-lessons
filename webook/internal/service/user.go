@@ -5,7 +5,6 @@ import (
 	"errors"
 	"geekbang-lessons/webook/internal/domain"
 	"geekbang-lessons/webook/internal/repository"
-	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -52,10 +51,10 @@ func (svc *UserService) Login(ctx context.Context, email string, password string
 	return u, nil
 }
 
-func (svc *UserService) UpdateUserInfo(ctx *gin.Context, user domain.User) error {
-	return svc.repo.UpdateUser(ctx, user)
+func (svc *UserService) UpdateNonSensitiveInfo(ctx context.Context, user domain.User) error {
+	return svc.repo.UpdateNonZeroFields(ctx, user)
 }
 
-func (svc *UserService) GetProfile(ctx *gin.Context, userId int64) (domain.User, error) {
-	return svc.repo.FindById(ctx, userId)
+func (svc *UserService) Profile(ctx context.Context, uid int64) (domain.User, error) {
+	return svc.repo.FindById(ctx, uid)
 }

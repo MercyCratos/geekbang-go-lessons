@@ -33,13 +33,13 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	userGroup := server.Group("/users")
 
-	userGroup.POST("/signup", h.signup)
-	userGroup.POST("/login", h.login)
-	userGroup.PUT("/edit", h.edit)
-	userGroup.GET("/profile", h.profile)
+	userGroup.POST("/signup", h.Signup)
+	userGroup.POST("/login", h.Login)
+	userGroup.PUT("/edit", h.Edit)
+	userGroup.GET("/profile", h.Profile)
 }
 
-func (h *UserHandler) signup(ctx *gin.Context) {
+func (h *UserHandler) Signup(ctx *gin.Context) {
 	type SignupReq struct {
 		Email           string `json:"email"`
 		Password        string `json:"password"`
@@ -90,7 +90,7 @@ func (h *UserHandler) signup(ctx *gin.Context) {
 	}
 }
 
-func (h *UserHandler) login(ctx *gin.Context) {
+func (h *UserHandler) Login(ctx *gin.Context) {
 	type LoginReq struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -124,10 +124,10 @@ func (h *UserHandler) login(ctx *gin.Context) {
 	}
 }
 
-func (h *UserHandler) profile(ctx *gin.Context) {
+func (h *UserHandler) Profile(ctx *gin.Context) {
 	userId := h.getUserIdFromSession(ctx)
 
-	u, err := h.svc.GetProfile(ctx, userId)
+	u, err := h.svc.Profile(ctx, userId)
 	if err != nil {
 		ctx.String(http.StatusOK, "系统异常")
 		return
@@ -147,27 +147,27 @@ func (h *UserHandler) profile(ctx *gin.Context) {
 	})
 }
 
-func (h *UserHandler) edit(ctx *gin.Context) {
-	type EditReq struct {
+func (h *UserHandler) Edit(ctx *gin.Context) {
+	type Req struct {
 		Nickname string `json:"nickname"`
 		Birthday string `json:"birthday"`
 		AboutMe  string `json:"about_me"`
 	}
 
-	var req EditReq
+	var req Req
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
 
-	userId := h.getUserIdFromSession(ctx)
+	uid := h.getUserIdFromSession(ctx)
 
-	if utf8.RuneCountInString(req.Nickname) > 24 {
-		ctx.String(http.StatusOK, "昵称不能超过24位")
+	if utf8.RuneCountInString(req.Nickname) > 128 {
+		ctx.String(http.StatusOK, "昵称不能超过128位")
 		return
 	}
 
-	if utf8.RuneCountInString(req.AboutMe) > 128 {
-		ctx.String(http.StatusOK, "关于我不能超过128个字符")
+	if utf8.RuneCountInString(req.AboutMe) > 4096 {
+		ctx.String(http.StatusOK, "关于我不能超过4096个字符")
 		return
 	}
 
@@ -177,8 +177,8 @@ func (h *UserHandler) edit(ctx *gin.Context) {
 		return
 	}
 
-	err = h.svc.UpdateUserInfo(ctx, domain.User{
-		Id:       userId,
+	err = h.svc.UpdateNonSensitiveInfo(ctx, domain.User{
+		Id:       uid,
 		Nickname: req.Nickname,
 		Birthday: birthday,
 		AboutMe:  req.AboutMe,
