@@ -51,6 +51,13 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 
+		if uc.UserAgent != ctx.GetHeader("User-Agent") {
+			// TODO 这个地方要埋点，因为能够进来这个分支的，大概率是攻击者
+			// UserAgent不是最好的选择，这里最好是使用浏览器指纹
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
 		expireTime := uc.ExpiresAt
 		// 剩余过期时间 < 50s 就要刷新
 		if expireTime.Sub(time.Now()) < time.Second*50 {
