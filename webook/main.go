@@ -53,10 +53,24 @@ func initWebServer() *gin.Engine {
 			}
 			return strings.Contains(origin, "your_company.com")
 		},
-		AllowHeaders: []string{"Content-Type"},
-		MaxAge:       12 * time.Hour,
+		AllowHeaders: []string{"Content-Type", "Authorization"},
+		// 允许前端访问你的后端响应中带的哪些头部
+		ExposeHeaders: []string{"X-Auth-Token"},
+		MaxAge:        12 * time.Hour,
 	}))
 
+	//useSession(server)
+	useJWT(server)
+
+	return server
+}
+
+func useJWT(server *gin.Engine) {
+	loginMiddleware := &middleware.LoginJWTMiddlewareBuilder{}
+	server.Use(loginMiddleware.CheckLogin())
+}
+
+func useSession(server *gin.Engine) {
 	loginMiddleware := &middleware.LoginMiddlewareBuilder{}
 	store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
 		[]byte("k6CswdUm77WKcbM68UQUuxVsHSpTCwgK"),
@@ -65,8 +79,6 @@ func initWebServer() *gin.Engine {
 		panic(err)
 	}
 	server.Use(sessions.Sessions("ssid", store), loginMiddleware.CheckLogin())
-
-	return server
 }
 
 func initUserHandler(db *gorm.DB, server *gin.Engine) {

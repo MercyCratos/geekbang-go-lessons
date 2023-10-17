@@ -6,6 +6,7 @@ import (
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"time"
 	"unicode/utf8"
@@ -34,7 +35,8 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	userGroup := server.Group("/users")
 
 	userGroup.POST("/signup", h.Signup)
-	userGroup.POST("/login", h.Login)
+	//userGroup.POST("/login", h.Login)
+	userGroup.POST("/login", h.LoginJWT)
 	userGroup.PUT("/edit", h.Edit)
 	userGroup.GET("/profile", h.Profile)
 }
@@ -124,10 +126,50 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	}
 }
 
-func (h *UserHandler) Profile(ctx *gin.Context) {
-	userId := h.getUserIdFromSession(ctx)
+func (h *UserHandler) LoginJWT(ctx *gin.Context) {
+	type LoginReq struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 
-	u, err := h.svc.Profile(ctx, userId)
+	var req LoginReq
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	u, err := h.svc.Login(ctx, req.Email, req.Password)
+	switch err {
+	case nil:
+		uc := UserClaims{
+			Uid: u.Id,
+			RegisteredClaims: jwt.RegisteredClaims{
+				// 30分钟过期
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute)),
+			},
+		}
+		token := jwt.NewWithClaims(jwt.SigningMethodHS512, uc)
+		tokenStr, err := token.SignedString(JWTKey)
+		if err != nil {
+			ctx.String(http.StatusOK, "系统错误")
+		}
+
+		ctx.Header("X-Auth-Token", tokenStr)
+		ctx.String(http.StatusOK, "登录成功")
+	case service.ErrInvalidUserOrPassword:
+		ctx.String(http.StatusOK, "用户名或者密码不对")
+	default:
+		ctx.String(http.StatusOK, "系统错误")
+	}
+}
+
+func (h *UserHandler) Profile(ctx *gin.Context) {
+	uc, ok := ctx.MustGet("user").(UserClaims)
+	if !ok {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	u, err := h.svc.Profile(ctx, uc.Uid)
 	if err != nil {
 		ctx.String(http.StatusOK, "系统异常")
 		return
@@ -159,7 +201,11 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 		return
 	}
 
-	uid := h.getUserIdFromSession(ctx)
+	uc, ok := ctx.MustGet("user").(UserClaims)
+	if !ok {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
 
 	if utf8.RuneCountInString(req.Nickname) > 128 {
 		ctx.String(http.StatusOK, "昵称不能超过128位")
@@ -178,7 +224,7 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 	}
 
 	err = h.svc.UpdateNonSensitiveInfo(ctx, domain.User{
-		Id:       uid,
+		Id:       uc.Uid,
 		Nickname: req.Nickname,
 		Birthday: birthday,
 		AboutMe:  req.AboutMe,
@@ -194,4 +240,11 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 func (h *UserHandler) getUserIdFromSession(ctx *gin.Context) int64 {
 	session := sessions.Default(ctx)
 	return session.Get("userId").(int64)
+}
+
+var JWTKey = []byte("k6CswdUm75WKcbM68UQUuxVsHSpTCwgK")
+
+type UserClaims struct {
+	jwt.RegisteredClaims
+	Uid int64
 }
