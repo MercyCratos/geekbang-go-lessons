@@ -20,7 +20,7 @@ Content-Type: application/json
 ### user profile
 GET http://localhost:8080/users/profile
 Accept: application/json
-Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTc1NTY2MTksIlVpZCI6MX0.nRCwGQDHWDBzPFQ-MKA0qJRCTC9BcNfbfuafJdF0aEgxjsHtoaXPn1OvU2AHSaVNFDHCn1EzIXh4aRo8gL6xag
+Authorization: Bearer eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTc1NjA2NjYsIlVpZCI6MX0.S-Ne743iIRVS1LofEMFvifuLet2k-WGUobTWrETBeFCnGWSCkckukVT-yr6gGQwfOUICoXeKZHxKaciezAWPkg
 
 ### user edit
 PUT http://localhost:8080/users/edit

@@ -6,10 +6,12 @@ import (
 	"geekbang-lessons/webook/internal/service"
 	"geekbang-lessons/webook/internal/web"
 	"geekbang-lessons/webook/internal/web/middleware"
+	"geekbang-lessons/webook/pkg/ginx/middleware/ratelimit"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/redis"
+	redisSessions "github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"strings"
@@ -45,6 +47,7 @@ func initDB() *gorm.DB {
 
 func initWebServer() *gin.Engine {
 	server := gin.Default()
+
 	server.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 		AllowOriginFunc: func(origin string) bool {
@@ -59,6 +62,12 @@ func initWebServer() *gin.Engine {
 		MaxAge:        12 * time.Hour,
 	}))
 
+	// ratelimit
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+	})
+	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
+
 	//useSession(server)
 	useJWT(server)
 
@@ -72,7 +81,7 @@ func useJWT(server *gin.Engine) {
 
 func useSession(server *gin.Engine) {
 	loginMiddleware := &middleware.LoginMiddlewareBuilder{}
-	store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
+	store, err := redisSessions.NewStore(16, "tcp", "localhost:6379", "",
 		[]byte("k6CswdUm77WKcbM68UQUuxVsHSpTCwgK"),
 		[]byte("k6CswdUm77WKcbM68UQUuxVsHSpTCwgA"))
 	if err != nil {
