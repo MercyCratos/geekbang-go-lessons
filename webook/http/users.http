@@ -1,5 +1,5 @@
 ### user signup
-POST http://localhost:8080/users/signup
+POST http://dev.geekbang.com/users/signup
 Content-Type: application/json
 
 {

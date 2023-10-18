@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: webook
 spec:
-  replicas: 3
+  replicas: 2
   # 筛选器，就是在 k8s 的一大堆 pod 里面，我怎么知道哪些是我管理的那三个
   selector:
     matchLabels:
@@ -19,4 +19,4 @@ spec:
         - name: webook
           image: mercycrazy/webook:v0.0.1
           ports:
-            - containerPort: 8080
+            - containerPort: 8081
