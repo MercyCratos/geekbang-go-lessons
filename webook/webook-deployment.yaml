@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webook
+spec:
+  replicas: 3
+  # 筛选器，就是在 k8s 的一大堆 pod 里面，我怎么知道哪些是我管理的那三个
+  selector:
+    matchLabels:
+      app: webook
+  # pod 的模版
+  template:
+    metadata:
+      labels:
+        # 这个 webook 一定要和前面的 selector 的 matchLabels 匹配上
+        app: webook
+    spec:
+      containers:
+        - name: webook
+          image: mercycrazy/webook:v0.0.1
+          ports:
+            - containerPort: 8080

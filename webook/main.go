@@ -1,6 +1,7 @@
 package main
 
 import (
+	"geekbang-lessons/webook/config"
 	"geekbang-lessons/webook/internal/repository"
 	"geekbang-lessons/webook/internal/repository/dao"
 	"geekbang-lessons/webook/internal/service"
@@ -32,7 +33,7 @@ func main() {
 }
 
 func initDB() *gorm.DB {
-	db, err := gorm.Open(mysql.Open("root:root@tcp(localhost:13316)/webook"))
+	db, err := gorm.Open(mysql.Open(config.Config.DB.DSN))
 	if err != nil {
 		panic(err)
 	}
@@ -64,7 +65,7 @@ func initWebServer() *gin.Engine {
 
 	// ratelimit
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: config.Config.Redis.Addr,
 	})
 	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
 
