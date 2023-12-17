@@ -3,7 +3,7 @@ POST http://localhost:8080/users/signup
 Content-Type: application/json
 
 {
-  "email": "1443424326@qq.com",
+  "email": "1443424396@qq.com",
   "password": "hello#world123",
   "confirm_password": "hello#world123"
 }
