@@ -3,6 +3,7 @@ package main
 import (
 	"geekbang-lessons/webook/config"
 	"geekbang-lessons/webook/internal/repository"
+	"geekbang-lessons/webook/internal/repository/cache"
 	"geekbang-lessons/webook/internal/repository/dao"
 	"geekbang-lessons/webook/internal/service"
 	"geekbang-lessons/webook/internal/web"
@@ -11,6 +12,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	redisSessions "github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"strings"
@@ -91,7 +93,10 @@ func useSession(server *gin.Engine) {
 
 func initUserHandler(db *gorm.DB, server *gin.Engine) {
 	userDao := dao.NewUserDao(db)
-	userRepository := repository.NewUserRepository(userDao)
+	userCache := cache.NewUserCache(redis.NewClient(&redis.Options{
+		Addr: config.Config.Redis.Addr,
+	}))
+	userRepository := repository.NewUserRepository(userDao, userCache)
 	userService := service.NewUserService(userRepository)
 	userHandler := web.NewUserHandler(userService)
 	userHandler.RegisterRoutes(server)
